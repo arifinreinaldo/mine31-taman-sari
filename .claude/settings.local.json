@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Bash(flutter:*)",
+      "Bash",
+      "Bash(dart:*)",
+      "Skill(update-config)"
+    ]
+  }
+}

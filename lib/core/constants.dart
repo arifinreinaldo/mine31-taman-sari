@@ -8,7 +8,8 @@ abstract class MetaKeys {
 /// File names used across the app.
 abstract class AppFiles {
   static const databaseName = 'operation.db';
-  static const backupName = 'operation_backup.db';
+  static const backupFolder = 'com.sales.back';
+  static const maxBackupCount = 5;
 }
 
 /// Duration thresholds.

@@ -46,6 +46,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final success = await service.backupDatabase();
 
     ref.invalidate(lastBackupProvider);
+    ref.invalidate(googleAccountProvider);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -77,6 +78,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final db = ref.read(databaseProvider);
     final service = GoogleDriveService(db);
     final result = await service.restoreDatabase();
+
+    ref.invalidate(googleAccountProvider);
 
     if (!mounted) return;
 

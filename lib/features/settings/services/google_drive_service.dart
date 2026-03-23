@@ -1,10 +1,9 @@
 import 'dart:io';
 
 import 'package:google_sign_in/google_sign_in.dart';
-
-import '../../../core/constants.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 import '../../../core/constants.dart';
 import '../../../database/app_database.dart';
@@ -30,6 +29,27 @@ class GoogleDriveService {
     return _AuthClient(token);
   }
 
+  /// Find or create the backup folder on Drive. Returns the folder ID.
+  Future<String> _getOrCreateFolder(drive.DriveApi driveApi) async {
+    final existing = await driveApi.files.list(
+      q: "name = '${AppFiles.backupFolder}' "
+          "and mimeType = 'application/vnd.google-apps.folder' "
+          "and trashed = false",
+      spaces: 'drive',
+    );
+
+    if (existing.files != null && existing.files!.isNotEmpty) {
+      return existing.files!.first.id!;
+    }
+
+    final folder = await driveApi.files.create(
+      drive.File()
+        ..name = AppFiles.backupFolder
+        ..mimeType = 'application/vnd.google-apps.folder',
+    );
+    return folder.id!;
+  }
+
   /// Upload the database file to Google Drive.
   Future<bool> backupDatabase() async {
     final client = await _getAuthClient();
@@ -42,33 +62,28 @@ class GoogleDriveService {
 
       if (!await dbFile.exists()) return false;
 
-      // Search for existing backup file
-      const fileName = AppFiles.backupName;
-      final existing = await driveApi.files.list(
-        q: "name = '$fileName' and trashed = false",
-        spaces: 'drive',
-      );
+      final folderId = await _getOrCreateFolder(driveApi);
+
+      // Timestamp-based filename: operation_backup_20260323_143025.db
+      final now = DateTime.now();
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(now);
+      final fileName = 'operation_backup_$timestamp.db';
 
       final media = drive.Media(dbFile.openRead(), await dbFile.length());
 
-      if (existing.files != null && existing.files!.isNotEmpty) {
-        // Update existing file
-        await driveApi.files.update(
-          drive.File()..name = fileName,
-          existing.files!.first.id!,
-          uploadMedia: media,
-        );
-      } else {
-        // Create new file
-        await driveApi.files.create(
-          drive.File()..name = fileName,
-          uploadMedia: media,
-        );
-      }
+      await driveApi.files.create(
+        drive.File()
+          ..name = fileName
+          ..parents = [folderId],
+        uploadMedia: media,
+      );
+
+      // Prune old backups beyond the retention limit
+      await _pruneOldBackups(driveApi, folderId);
 
       await _db.setMetadata(
         MetaKeys.lastBackup,
-        DateTime.now().toIso8601String(),
+        now.toIso8601String(),
       );
 
       return true;
@@ -76,6 +91,28 @@ class GoogleDriveService {
       return false;
     } finally {
       client.close();
+    }
+  }
+
+  /// Delete oldest backups beyond [AppFiles.maxBackupCount].
+  Future<void> _pruneOldBackups(
+    drive.DriveApi driveApi,
+    String folderId,
+  ) async {
+    final allBackups = await driveApi.files.list(
+      q: "'$folderId' in parents "
+          "and name contains 'operation_backup_' "
+          "and trashed = false",
+      orderBy: 'createdTime desc',
+      $fields: 'files(id, name, createdTime)',
+    );
+
+    final files = allBackups.files;
+    if (files == null || files.length <= AppFiles.maxBackupCount) return;
+
+    // Delete everything beyond the newest N backups
+    for (final file in files.skip(AppFiles.maxBackupCount)) {
+      await driveApi.files.delete(file.id!);
     }
   }
 
@@ -88,7 +125,7 @@ class GoogleDriveService {
     return DateTime.now().difference(last) > AppDurations.autoBackupInterval;
   }
 
-  /// Download backup from Google Drive and replace local database.
+  /// Download the latest backup from Google Drive and replace local database.
   /// Returns a status string: 'success', 'no_backup', 'cancelled', or 'error'.
   Future<String> restoreDatabase() async {
     final client = await _getAuthClient();
@@ -97,18 +134,23 @@ class GoogleDriveService {
     try {
       final driveApi = drive.DriveApi(client);
 
-      // Search for the backup file
-      const fileName = AppFiles.backupName;
-      final existing = await driveApi.files.list(
-        q: "name = '$fileName' and trashed = false",
-        spaces: 'drive',
+      final folderId = await _getOrCreateFolder(driveApi);
+
+      // Get the most recent backup
+      final backups = await driveApi.files.list(
+        q: "'$folderId' in parents "
+            "and name contains 'operation_backup_' "
+            "and trashed = false",
+        orderBy: 'createdTime desc',
+        pageSize: 1,
+        $fields: 'files(id, name)',
       );
 
-      if (existing.files == null || existing.files!.isEmpty) {
+      if (backups.files == null || backups.files!.isEmpty) {
         return 'no_backup';
       }
 
-      final fileId = existing.files!.first.id!;
+      final fileId = backups.files!.first.id!;
 
       // Download to a temp file first to avoid corrupting the DB on failure
       final dbPath = await AppDatabase.databasePath;

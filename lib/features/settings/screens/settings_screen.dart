@@ -1,7 +1,10 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/formatters.dart';
 import '../../../core/providers/core_providers.dart';
+import '../../../shared/widgets/confirm_dialog.dart';
 import '../../products/repositories/product_repository.dart';
 import '../../sales/repositories/transaction_repository.dart';
 import '../providers/settings_providers.dart';
@@ -17,10 +20,26 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _backingUp = false;
+  bool _restoring = false;
   bool _exporting = false;
   bool _importing = false;
 
+  /// Returns true if connected, false (with snackbar) if offline.
+  Future<bool> _checkConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    if (result.contains(ConnectivityResult.none)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No internet connection')),
+        );
+      }
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _backup() async {
+    if (!await _checkConnectivity()) return;
     setState(() => _backingUp = true);
     final db = ref.read(databaseProvider);
     final service = GoogleDriveService(db);
@@ -40,7 +59,69 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() => _backingUp = false);
   }
 
+  Future<void> _restore() async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Restore Backup',
+      message:
+          'This will replace ALL local data with the backup from Google Drive. '
+          'This action cannot be undone.\n\n'
+          'The app will close after restoring. Please reopen it manually.',
+      confirmText: 'Restore',
+      isDestructive: true,
+    );
+    if (!confirmed) return;
+    if (!await _checkConnectivity()) return;
+
+    setState(() => _restoring = true);
+    final db = ref.read(databaseProvider);
+    final service = GoogleDriveService(db);
+    final result = await service.restoreDatabase();
+
+    if (!mounted) return;
+
+    switch (result) {
+      case 'success':
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Restore Complete'),
+            content: const Text(
+              'The database has been restored. '
+              'The app will now close. Please reopen it.',
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => SystemNavigator.pop(),
+                child: const Text('Close App'),
+              ),
+            ],
+          ),
+        );
+      case 'no_backup':
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No backup found on Google Drive')),
+        );
+      case 'cancelled':
+        break;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Restore failed')),
+        );
+    }
+    setState(() => _restoring = false);
+  }
+
+  Future<void> _signOut() async {
+    final db = ref.read(databaseProvider);
+    final service = GoogleDriveService(db);
+    await service.signOut();
+    ref.invalidate(googleAccountProvider);
+  }
+
   Future<void> _export() async {
+    if (!await _checkConnectivity()) return;
     setState(() => _exporting = true);
 
     final db = ref.read(databaseProvider);
@@ -70,6 +151,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _import() async {
+    if (!await _checkConnectivity()) return;
     setState(() => _importing = true);
 
     final db = ref.read(databaseProvider);
@@ -100,6 +182,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final lastBackup = ref.watch(lastBackupProvider);
     final lastExport = ref.watch(lastExportProvider);
+    final googleAccount = ref.watch(googleAccountProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -107,6 +190,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           // Google Drive Backup
           const _SectionHeader(title: 'Google Drive Backup'),
+
+          // Signed-in account display
+          googleAccount.when(
+            data: (account) => account != null
+                ? ListTile(
+                    leading: const Icon(Icons.account_circle_outlined),
+                    title: Text(account.displayName ?? account.email),
+                    subtitle: account.displayName != null
+                        ? Text(account.email)
+                        : null,
+                    trailing: TextButton(
+                      onPressed: _signOut,
+                      child: const Text('Sign Out'),
+                    ),
+                  )
+                : const ListTile(
+                    leading: Icon(Icons.account_circle_outlined),
+                    title: Text('Not signed in'),
+                    subtitle:
+                        Text('Sign in automatically on backup or restore'),
+                  ),
+            loading: () => const ListTile(
+              leading: Icon(Icons.account_circle_outlined),
+              title: Text('Checking account...'),
+            ),
+            error: (_, __) => const ListTile(
+              leading: Icon(Icons.account_circle_outlined),
+              title: Text('Not signed in'),
+            ),
+          ),
+
           ListTile(
             leading: const Icon(Icons.cloud_upload_outlined),
             title: const Text('Backup Now'),
@@ -125,6 +239,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   )
                 : const Icon(Icons.chevron_right),
             onTap: _backingUp ? null : _backup,
+          ),
+          ListTile(
+            leading: const Icon(Icons.cloud_download_outlined),
+            title: const Text('Restore from Backup'),
+            subtitle: const Text('Replace local data with Drive backup'),
+            trailing: _restoring
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.chevron_right),
+            onTap: _restoring ? null : _restore,
           ),
 
           const Divider(),

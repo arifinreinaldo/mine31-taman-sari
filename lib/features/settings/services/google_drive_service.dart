@@ -86,12 +86,75 @@ class GoogleDriveService {
     return DateTime.now().difference(last) > AppDurations.autoBackupInterval;
   }
 
+  /// Download backup from Google Drive and replace local database.
+  /// Returns a status string: 'success', 'no_backup', 'cancelled', or 'error'.
+  Future<String> restoreDatabase() async {
+    final client = await _getAuthClient();
+    if (client == null) return 'cancelled';
+
+    try {
+      final driveApi = drive.DriveApi(client);
+
+      // Search for the backup file
+      const fileName = 'taman_sari_backup.db';
+      final existing = await driveApi.files.list(
+        q: "name = '$fileName' and trashed = false",
+        spaces: 'drive',
+      );
+
+      if (existing.files == null || existing.files!.isEmpty) {
+        return 'no_backup';
+      }
+
+      final fileId = existing.files!.first.id!;
+
+      // Download to a temp file first to avoid corrupting the DB on failure
+      final dbPath = await AppDatabase.databasePath;
+      final tempPath = '$dbPath.tmp';
+      final tempFile = File(tempPath);
+
+      final media = await driveApi.files.get(
+        fileId,
+        downloadOptions: drive.DownloadOptions.fullMedia,
+      ) as drive.Media;
+
+      final sink = tempFile.openWrite();
+      await for (final chunk in media.stream) {
+        sink.add(chunk);
+      }
+      await sink.close();
+
+      // Close the current DB before replacing the file
+      await _db.close();
+
+      // Replace the local DB with the downloaded file
+      await tempFile.rename(dbPath);
+
+      return 'success';
+    } catch (_) {
+      // Clean up temp file if it exists
+      final dbPath = await AppDatabase.databasePath;
+      final tempFile = File('$dbPath.tmp');
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
+      return 'error';
+    } finally {
+      client.close();
+    }
+  }
+
   Future<bool> isSignedIn() async {
     return _googleSignIn.isSignedIn();
   }
 
   Future<void> signOut() async {
     await _googleSignIn.signOut();
+  }
+
+  /// Get the currently signed-in Google account without prompting UI.
+  Future<GoogleSignInAccount?> getSignedInAccount() async {
+    return _googleSignIn.signInSilently();
   }
 }
 

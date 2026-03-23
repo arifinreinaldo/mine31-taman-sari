@@ -53,8 +53,10 @@ All tables use TEXT UUIDs for IDs. Prices are INTEGER (IDR, no decimals). Schema
 
 ## Google Integration
 
-- **Google Drive backup:** uploads raw `.db` file as `taman_sari_backup.db`
+- **Google Drive backup:** uploads/restores raw `.db` file as `taman_sari_backup.db`. Restore closes DB and requires app restart.
+- **Google Drive restore:** downloads backup from Drive, writes to temp file first (safe swap), closes DB, replaces local file. App must restart after restore.
 - **Sheets export/import:** uses an Apps Script URL (user-configured) to POST JSON payloads. Import upserts products only.
+- **Account display:** Settings screen shows signed-in Google account with sign-out option via `signInSilently()`.
 - Both are optional; the app is fully functional offline.
 
 ## Conventions

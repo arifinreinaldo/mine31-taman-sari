@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taman_sari_pos/database/app_database.dart';
+import 'package:per_taman_sari/database/app_database.dart';
 
 AppDatabase _createTestDb() {
   return AppDatabase.forTesting(NativeDatabase.memory());

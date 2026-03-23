@@ -1,4 +1,4 @@
-name: "Per Taman Sari"
+name: per_taman_sari
 description: "Taman Sari POS - Offline-first spare parts shop POS & inventory"
 publish_to: 'none'
 version: 1.0.0+1
@@ -44,6 +44,14 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   drift_dev: ^2.18.0
   build_runner: ^2.4.11
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "icon.png"
+  adaptive_icon_background: "#2C3E50"
+  adaptive_icon_foreground: "icon.png"
 
 flutter:
   uses-material-design: true

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taman_sari_pos/features/sales/models/cart_item.dart';
-import 'package:taman_sari_pos/features/sales/providers/cart_provider.dart';
+import 'package:per_taman_sari/features/sales/models/cart_item.dart';
+import 'package:per_taman_sari/features/sales/providers/cart_provider.dart';
 
 CartItem _makeItem({
   String productId = 'p1',

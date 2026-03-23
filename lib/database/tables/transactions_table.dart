@@ -6,6 +6,8 @@ class Transactions extends Table {
   IntColumn get totalPrice => integer()();
   TextColumn get notes => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get cancelledAt => dateTime().nullable()();
+  TextColumn get cancelReason => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -33,7 +33,8 @@
 | Backup DB to Google Drive | Done | Uploads/updates `taman_sari_backup.db` |
 | Restore DB from Google Drive | Done | Downloads to temp file, safe swap, app restart required |
 | Show signed-in Google account | Done | `signInSilently()`, displays email + sign-out button |
-| Auto-backup (>24h check) | Not Started | `shouldAutoBackup()` exists but is never called |
+| Auto-backup (>24h check) | Done | Triggers silently on cold start if signed in and >24h |
+| Connectivity check | Done | Warns "No internet connection" before all Google operations |
 
 ### Settings — Google Sheets
 | Feature | Status | Notes |
@@ -51,41 +52,25 @@
 
 ---
 
-## Testing
+## Testing (93 tests, all passing)
 
-| Area | Status | Notes |
-|---|---|---|
-| Auth repository | Done | 5 tests |
-| Product repository | Done | 18+ tests |
-| Cart item model | Done | 6 tests |
-| Cart provider | Done | 8 tests |
-| Transaction repository | Done | 8+ tests |
-| Core formatters | Done | 10 tests |
-| Database schema & transactions | Done | 6 tests |
-| UI / widget tests | Not Started | No screen tests |
-| Google services tests | Not Started | Backup/restore/export/import untested |
-| Routing tests | Not Started | No navigation tests |
+| Area | Status | Tests | Notes |
+|---|---|---|---|
+| Auth repository | Done | 5 | `authenticate()`, `isDeviceSupported()`, `canCheckBiometrics()` |
+| Product repository | Done | 18+ | CRUD, soft-delete, search, upsert |
+| Cart item model | Done | 6 | subtotal, copyWith, wouldCauseNegativeStock |
+| Cart provider | Done | 8 | addItem, updateItem, removeItem, clear, totals |
+| Transaction repository | Done | 8+ | Atomic saveSale, watchAll, getById, getItems |
+| Core formatters | Done | 14 | formatIdr, formatDateTime, formatDate, formatTimeAgo |
+| Database schema & transactions | Done | 6 | Products, Transactions, SyncMetadata, rollback |
+| Google Drive service | Done | 5 | shouldAutoBackup() timestamp logic |
+| UI / widget smoke tests | Done | 13 | ProductList, NewSale, SaleHistory, Settings screens |
+| Routing / auth guard | Done | 5 | Auth redirect, bottom nav, tab navigation |
 
 ---
 
 ## Known Issues & TODOs
 
-1. **Apps Script URL not configurable** (`settings_screen.dart:114, 143`)
+1. **Apps Script URL not configurable** (`settings_screen.dart:116, 145`)
    - Sheets export/import are non-functional until a config UI is added
    - Need: form screen + persist URL in `SyncMetadata` via `MetaKeys`
-
-2. **Auto-backup never triggered**
-   - `shouldAutoBackup()` exists in `GoogleDriveService` but nothing calls it
-   - Need: trigger check on app start or home screen load
-
-3. **`connectivity_plus` unused**
-   - Dependency in `pubspec.yaml` but never imported
-   - Could warn user before Google operations on bad network
-
-4. **`app_scaffold.dart` unused**
-   - `lib/shared/widgets/app_scaffold.dart` — not referenced anywhere
-   - Can be removed or repurposed
-
-5. **Deprecation warnings**
-   - `withOpacity` usage in `stock_badge.dart:22` and `cart_summary.dart:29`
-   - Should migrate to `.withValues()`

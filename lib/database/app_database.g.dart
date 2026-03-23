@@ -470,9 +470,21 @@ class $TransactionsTable extends Transactions
   late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
       'created_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _cancelledAtMeta =
+      const VerificationMeta('cancelledAt');
+  @override
+  late final GeneratedColumn<DateTime> cancelledAt = GeneratedColumn<DateTime>(
+      'cancelled_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _cancelReasonMeta =
+      const VerificationMeta('cancelReason');
+  @override
+  late final GeneratedColumn<String> cancelReason = GeneratedColumn<String>(
+      'cancel_reason', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, dateTime_, totalPrice, notes, createdAt];
+      [id, dateTime_, totalPrice, notes, createdAt, cancelledAt, cancelReason];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -512,6 +524,18 @@ class $TransactionsTable extends Transactions
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('cancelled_at')) {
+      context.handle(
+          _cancelledAtMeta,
+          cancelledAt.isAcceptableOrUnknown(
+              data['cancelled_at']!, _cancelledAtMeta));
+    }
+    if (data.containsKey('cancel_reason')) {
+      context.handle(
+          _cancelReasonMeta,
+          cancelReason.isAcceptableOrUnknown(
+              data['cancel_reason']!, _cancelReasonMeta));
+    }
     return context;
   }
 
@@ -531,6 +555,10 @@ class $TransactionsTable extends Transactions
           .read(DriftSqlType.string, data['${effectivePrefix}notes'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      cancelledAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}cancelled_at']),
+      cancelReason: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cancel_reason']),
     );
   }
 
@@ -546,12 +574,16 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final int totalPrice;
   final String notes;
   final DateTime createdAt;
+  final DateTime? cancelledAt;
+  final String? cancelReason;
   const Transaction(
       {required this.id,
       required this.dateTime_,
       required this.totalPrice,
       required this.notes,
-      required this.createdAt});
+      required this.createdAt,
+      this.cancelledAt,
+      this.cancelReason});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -560,6 +592,12 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     map['total_price'] = Variable<int>(totalPrice);
     map['notes'] = Variable<String>(notes);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || cancelledAt != null) {
+      map['cancelled_at'] = Variable<DateTime>(cancelledAt);
+    }
+    if (!nullToAbsent || cancelReason != null) {
+      map['cancel_reason'] = Variable<String>(cancelReason);
+    }
     return map;
   }
 
@@ -570,6 +608,12 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       totalPrice: Value(totalPrice),
       notes: Value(notes),
       createdAt: Value(createdAt),
+      cancelledAt: cancelledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cancelledAt),
+      cancelReason: cancelReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cancelReason),
     );
   }
 
@@ -582,6 +626,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       totalPrice: serializer.fromJson<int>(json['totalPrice']),
       notes: serializer.fromJson<String>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      cancelledAt: serializer.fromJson<DateTime?>(json['cancelledAt']),
+      cancelReason: serializer.fromJson<String?>(json['cancelReason']),
     );
   }
   @override
@@ -593,6 +639,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'totalPrice': serializer.toJson<int>(totalPrice),
       'notes': serializer.toJson<String>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'cancelledAt': serializer.toJson<DateTime?>(cancelledAt),
+      'cancelReason': serializer.toJson<String?>(cancelReason),
     };
   }
 
@@ -601,13 +649,18 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           DateTime? dateTime_,
           int? totalPrice,
           String? notes,
-          DateTime? createdAt}) =>
+          DateTime? createdAt,
+          Value<DateTime?> cancelledAt = const Value.absent(),
+          Value<String?> cancelReason = const Value.absent()}) =>
       Transaction(
         id: id ?? this.id,
         dateTime_: dateTime_ ?? this.dateTime_,
         totalPrice: totalPrice ?? this.totalPrice,
         notes: notes ?? this.notes,
         createdAt: createdAt ?? this.createdAt,
+        cancelledAt: cancelledAt.present ? cancelledAt.value : this.cancelledAt,
+        cancelReason:
+            cancelReason.present ? cancelReason.value : this.cancelReason,
       );
   Transaction copyWithCompanion(TransactionsCompanion data) {
     return Transaction(
@@ -617,6 +670,11 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           data.totalPrice.present ? data.totalPrice.value : this.totalPrice,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      cancelledAt:
+          data.cancelledAt.present ? data.cancelledAt.value : this.cancelledAt,
+      cancelReason: data.cancelReason.present
+          ? data.cancelReason.value
+          : this.cancelReason,
     );
   }
 
@@ -627,13 +685,16 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('dateTime_: $dateTime_, ')
           ..write('totalPrice: $totalPrice, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('cancelledAt: $cancelledAt, ')
+          ..write('cancelReason: $cancelReason')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, dateTime_, totalPrice, notes, createdAt);
+  int get hashCode => Object.hash(
+      id, dateTime_, totalPrice, notes, createdAt, cancelledAt, cancelReason);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -642,7 +703,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.dateTime_ == this.dateTime_ &&
           other.totalPrice == this.totalPrice &&
           other.notes == this.notes &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.cancelledAt == this.cancelledAt &&
+          other.cancelReason == this.cancelReason);
 }
 
 class TransactionsCompanion extends UpdateCompanion<Transaction> {
@@ -651,6 +714,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<int> totalPrice;
   final Value<String> notes;
   final Value<DateTime> createdAt;
+  final Value<DateTime?> cancelledAt;
+  final Value<String?> cancelReason;
   final Value<int> rowid;
   const TransactionsCompanion({
     this.id = const Value.absent(),
@@ -658,6 +723,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.totalPrice = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.cancelledAt = const Value.absent(),
+    this.cancelReason = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TransactionsCompanion.insert({
@@ -666,6 +733,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     required int totalPrice,
     this.notes = const Value.absent(),
     required DateTime createdAt,
+    this.cancelledAt = const Value.absent(),
+    this.cancelReason = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         dateTime_ = Value(dateTime_),
@@ -677,6 +746,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<int>? totalPrice,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
+    Expression<DateTime>? cancelledAt,
+    Expression<String>? cancelReason,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -685,6 +756,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (totalPrice != null) 'total_price': totalPrice,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
+      if (cancelledAt != null) 'cancelled_at': cancelledAt,
+      if (cancelReason != null) 'cancel_reason': cancelReason,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -695,6 +768,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       Value<int>? totalPrice,
       Value<String>? notes,
       Value<DateTime>? createdAt,
+      Value<DateTime?>? cancelledAt,
+      Value<String?>? cancelReason,
       Value<int>? rowid}) {
     return TransactionsCompanion(
       id: id ?? this.id,
@@ -702,6 +777,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       totalPrice: totalPrice ?? this.totalPrice,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
+      cancelReason: cancelReason ?? this.cancelReason,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -724,6 +801,12 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (cancelledAt.present) {
+      map['cancelled_at'] = Variable<DateTime>(cancelledAt.value);
+    }
+    if (cancelReason.present) {
+      map['cancel_reason'] = Variable<String>(cancelReason.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -738,6 +821,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('totalPrice: $totalPrice, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
+          ..write('cancelledAt: $cancelledAt, ')
+          ..write('cancelReason: $cancelReason, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1663,6 +1748,8 @@ typedef $$TransactionsTableCreateCompanionBuilder = TransactionsCompanion
   required int totalPrice,
   Value<String> notes,
   required DateTime createdAt,
+  Value<DateTime?> cancelledAt,
+  Value<String?> cancelReason,
   Value<int> rowid,
 });
 typedef $$TransactionsTableUpdateCompanionBuilder = TransactionsCompanion
@@ -1672,6 +1759,8 @@ typedef $$TransactionsTableUpdateCompanionBuilder = TransactionsCompanion
   Value<int> totalPrice,
   Value<String> notes,
   Value<DateTime> createdAt,
+  Value<DateTime?> cancelledAt,
+  Value<String?> cancelReason,
   Value<int> rowid,
 });
 
@@ -1721,6 +1810,12 @@ class $$TransactionsTableFilterComposer
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<DateTime> get cancelledAt => $composableBuilder(
+      column: $table.cancelledAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cancelReason => $composableBuilder(
+      column: $table.cancelReason, builder: (column) => ColumnFilters(column));
+
   Expression<bool> transactionItemsRefs(
       Expression<bool> Function($$TransactionItemsTableFilterComposer f) f) {
     final $$TransactionItemsTableFilterComposer composer = $composerBuilder(
@@ -1766,6 +1861,13 @@ class $$TransactionsTableOrderingComposer
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get cancelledAt => $composableBuilder(
+      column: $table.cancelledAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get cancelReason => $composableBuilder(
+      column: $table.cancelReason,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$TransactionsTableAnnotationComposer
@@ -1791,6 +1893,12 @@ class $$TransactionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cancelledAt => $composableBuilder(
+      column: $table.cancelledAt, builder: (column) => column);
+
+  GeneratedColumn<String> get cancelReason => $composableBuilder(
+      column: $table.cancelReason, builder: (column) => column);
 
   Expression<T> transactionItemsRefs<T extends Object>(
       Expression<T> Function($$TransactionItemsTableAnnotationComposer a) f) {
@@ -1842,6 +1950,8 @@ class $$TransactionsTableTableManager extends RootTableManager<
             Value<int> totalPrice = const Value.absent(),
             Value<String> notes = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> cancelledAt = const Value.absent(),
+            Value<String?> cancelReason = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TransactionsCompanion(
@@ -1850,6 +1960,8 @@ class $$TransactionsTableTableManager extends RootTableManager<
             totalPrice: totalPrice,
             notes: notes,
             createdAt: createdAt,
+            cancelledAt: cancelledAt,
+            cancelReason: cancelReason,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -1858,6 +1970,8 @@ class $$TransactionsTableTableManager extends RootTableManager<
             required int totalPrice,
             Value<String> notes = const Value.absent(),
             required DateTime createdAt,
+            Value<DateTime?> cancelledAt = const Value.absent(),
+            Value<String?> cancelReason = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TransactionsCompanion.insert(
@@ -1866,6 +1980,8 @@ class $$TransactionsTableTableManager extends RootTableManager<
             totalPrice: totalPrice,
             notes: notes,
             createdAt: createdAt,
+            cancelledAt: cancelledAt,
+            cancelReason: cancelReason,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

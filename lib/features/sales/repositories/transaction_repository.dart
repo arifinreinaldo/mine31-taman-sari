@@ -64,6 +64,77 @@ class TransactionRepository {
     return txnId;
   }
 
+  /// Cancel a transaction: reverse stock deductions and mark as cancelled.
+  Future<void> cancelSale({
+    required String transactionId,
+    required String reason,
+  }) async {
+    await _db.transaction(() async {
+      final txn = await (_db.select(_db.transactions)
+            ..where((t) => t.id.equals(transactionId)))
+          .getSingle();
+
+      if (txn.cancelledAt != null) {
+        throw StateError('Transaction is already cancelled');
+      }
+
+      // Reverse stock deductions
+      final items = await (_db.select(_db.transactionItems)
+            ..where((t) => t.transactionId.equals(transactionId)))
+          .get();
+
+      final now = DateTime.now();
+      for (final item in items) {
+        final product = await (_db.select(_db.products)
+              ..where((t) => t.id.equals(item.productId)))
+            .getSingleOrNull();
+        if (product != null) {
+          await (_db.update(_db.products)
+                ..where((t) => t.id.equals(item.productId)))
+              .write(
+            ProductsCompanion(
+              stockQty: Value(product.stockQty + item.quantity),
+              updatedAt: Value(now),
+            ),
+          );
+        }
+      }
+
+      // Mark transaction as cancelled
+      await (_db.update(_db.transactions)
+            ..where((t) => t.id.equals(transactionId)))
+          .write(
+        TransactionsCompanion(
+          cancelledAt: Value(now),
+          cancelReason: Value(reason),
+        ),
+      );
+    });
+  }
+
+  /// Load transaction items as CartItems with current product data.
+  Future<List<CartItem>> loadItemsAsCart(String transactionId) async {
+    final items = await getItems(transactionId);
+    final cartItems = <CartItem>[];
+
+    for (final item in items) {
+      final product = await (_db.select(_db.products)
+            ..where((t) => t.id.equals(item.productId)))
+          .getSingleOrNull();
+
+      cartItems.add(CartItem(
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        suggestedPrice: product?.suggestedPrice ?? item.unitPrice,
+        currentStock: product?.stockQty ?? 0,
+      ));
+    }
+
+    return cartItems;
+  }
+
   /// Watch all transactions, newest first.
   Stream<List<Transaction>> watchAll() {
     return (_db.select(_db.transactions)

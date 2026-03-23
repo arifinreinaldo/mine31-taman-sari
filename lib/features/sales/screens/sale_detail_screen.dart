@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/formatters.dart';
 import '../../../database/app_database.dart';
+import '../providers/cart_provider.dart';
 import '../providers/transaction_providers.dart';
 
 class SaleDetailScreen extends ConsumerStatefulWidget {
@@ -18,6 +20,8 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
   Transaction? _transaction;
   List<TransactionItem> _items = [];
   bool _loading = true;
+
+  bool get _isCancelled => _transaction?.cancelledAt != null;
 
   @override
   void initState() {
@@ -38,10 +42,92 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
     }
   }
 
+  Future<void> _handleEdit() async {
+    final reason = await _showCancelReasonDialog();
+    if (reason == null) return; // user dismissed
+
+    final repo = ref.read(transactionRepositoryProvider);
+
+    // 1. Cancel the original transaction
+    await repo.cancelSale(
+      transactionId: widget.transactionId,
+      reason: reason,
+    );
+
+    // 2. Load items into cart
+    final cartItems = await repo.loadItemsAsCart(widget.transactionId);
+    ref.read(cartProvider.notifier).loadItems(cartItems);
+
+    if (!mounted) return;
+
+    // 3. Navigate to new sale screen
+    context.go('/sale');
+  }
+
+  Future<String?> _showCancelReasonDialog() {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel & Edit Sale'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This will cancel the original sale and open a new one with the same items. Please provide a reason.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Cancel reason',
+                hintText: 'e.g. Wrong price, item correction',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Back'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final reason = controller.text.trim();
+              if (reason.isEmpty) return;
+              Navigator.of(ctx).pop(reason);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Cancel & Edit'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Sale Detail')),
+      appBar: AppBar(
+        title: const Text('Sale Detail'),
+        actions: [
+          if (!_loading && _transaction != null && !_isCancelled)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit sale',
+              onPressed: _handleEdit,
+            ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _transaction == null
@@ -49,6 +135,66 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    // Cancelled banner
+                    if (_isCancelled) ...[
+                      Card(
+                        color: theme.colorScheme.errorContainer,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.cancel_outlined,
+                                color: theme.colorScheme.onErrorContainer,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'CANCELLED',
+                                      style: theme.textTheme.labelLarge
+                                          ?.copyWith(
+                                        color:
+                                            theme.colorScheme.onErrorContainer,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    if (_transaction!.cancelReason != null &&
+                                        _transaction!
+                                            .cancelReason!.isNotEmpty) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _transaction!.cancelReason!,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                          color: theme
+                                              .colorScheme.onErrorContainer,
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      formatDateTime(
+                                          _transaction!.cancelledAt!),
+                                      style:
+                                          theme.textTheme.bodySmall?.copyWith(
+                                        color:
+                                            theme.colorScheme.onErrorContainer,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+
+                    // Transaction header
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
@@ -57,21 +203,23 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
                           children: [
                             Text(
                               formatDateTime(_transaction!.dateTime_),
-                              style: Theme.of(context).textTheme.titleMedium,
+                              style: theme.textTheme.titleMedium,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               formatIdr(_transaction!.totalPrice),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                decoration: _isCancelled
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
                             ),
                             if (_transaction!.notes.isNotEmpty) ...[
                               const SizedBox(height: 8),
                               Text(
                                 _transaction!.notes,
-                                style: Theme.of(context).textTheme.bodyMedium,
+                                style: theme.textTheme.bodyMedium,
                               ),
                             ],
                           ],
@@ -81,7 +229,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Items',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     ..._items.map(
@@ -93,7 +241,8 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
                           ),
                           trailing: Text(
                             formatIdr(item.subtotal),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),

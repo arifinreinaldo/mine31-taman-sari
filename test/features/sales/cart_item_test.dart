@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taman_sari_pos/features/sales/models/cart_item.dart';
+import 'package:per_taman_sari/features/sales/models/cart_item.dart';
 
 void main() {
   group('CartItem', () {

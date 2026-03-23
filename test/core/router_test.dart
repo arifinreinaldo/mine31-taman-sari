@@ -1,21 +1,19 @@
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taman_sari_pos/core/providers/core_providers.dart';
-import 'package:taman_sari_pos/core/router.dart';
-import 'package:taman_sari_pos/database/app_database.dart';
-import 'package:taman_sari_pos/features/auth/providers/auth_provider.dart';
-import 'package:taman_sari_pos/features/auth/repositories/auth_repository.dart';
+import 'package:per_taman_sari/core/router.dart';
+import 'package:per_taman_sari/features/auth/providers/auth_provider.dart';
+import 'package:per_taman_sari/features/auth/repositories/auth_repository.dart';
+import 'package:per_taman_sari/features/products/providers/product_providers.dart';
+import 'package:per_taman_sari/features/sales/providers/transaction_providers.dart';
+import 'package:per_taman_sari/features/settings/providers/settings_providers.dart';
 
 /// A fake AuthRepository that never calls platform plugins.
 class FakeAuthRepository extends AuthRepository {
-  final bool shouldSucceed;
-
-  FakeAuthRepository({this.shouldSucceed = false});
+  FakeAuthRepository();
 
   @override
-  Future<bool> authenticate() async => shouldSucceed;
+  Future<bool> authenticate() async => false;
 
   @override
   Future<bool> isDeviceSupported() async => true;
@@ -24,119 +22,86 @@ class FakeAuthRepository extends AuthRepository {
   Future<bool> canCheckBiometrics() async => true;
 }
 
-/// Build the full app with router, overriding auth state, DB, and auth repo.
-Widget _routerApp({
-  required AppDatabase db,
-  required bool isAuthenticated,
-}) {
+/// Build the full app with router, overriding providers to avoid real DB.
+Widget _routerApp({required bool isAuthenticated}) {
   return ProviderScope(
     overrides: [
-      databaseProvider.overrideWithValue(db),
       isAuthenticatedProvider.overrideWith((ref) => isAuthenticated),
       authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+      productListProvider.overrideWith((ref) => Stream.value([])),
+      transactionListProvider.overrideWith((ref) => Stream.value([])),
+      lastBackupProvider.overrideWith((ref) async => null),
+      lastExportProvider.overrideWith((ref) async => null),
+      googleAccountProvider.overrideWith((ref) async => null),
     ],
     child: Consumer(
       builder: (context, ref, _) {
         final router = ref.watch(routerProvider);
-        return MaterialApp.router(
-          routerConfig: router,
-        );
+        return MaterialApp.router(routerConfig: router);
       },
     ),
   );
-}
-
-/// Clean up: close DB outside fake-async zone, then dispose widget tree.
-Future<void> _cleanup(WidgetTester tester, AppDatabase db) async {
-  await tester.runAsync(() => db.close());
-  await tester.pumpWidget(const SizedBox());
-  await tester.pump();
 }
 
 void main() {
   group('Router auth guard', () {
     testWidgets('redirects to PIN screen when unauthenticated',
         (tester) async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      await tester.pumpWidget(_routerApp(db: db, isAuthenticated: false));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpWidget(_routerApp(isAuthenticated: false));
+      await tester.pumpAndSettle();
 
-      // Should see the auth/PIN screen content
       expect(find.text('Taman Sari POS'), findsOneWidget);
       expect(find.text('Authenticate to continue'), findsOneWidget);
-
-      await _cleanup(tester, db);
     });
 
     testWidgets('shows main screen when authenticated', (tester) async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      await tester.pumpWidget(_routerApp(db: db, isAuthenticated: true));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpWidget(_routerApp(isAuthenticated: true));
+      await tester.pumpAndSettle();
 
-      // Should see the bottom nav with Products tab
       expect(find.text('Products'), findsWidgets);
-
-      await _cleanup(tester, db);
     });
 
     testWidgets('shows bottom navigation bar when authenticated',
         (tester) async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      await tester.pumpWidget(_routerApp(db: db, isAuthenticated: true));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpWidget(_routerApp(isAuthenticated: true));
+      await tester.pumpAndSettle();
 
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.text('New Sale'), findsOneWidget);
       expect(find.text('History'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
-
-      await _cleanup(tester, db);
     });
 
     testWidgets('does not show bottom nav on PIN screen', (tester) async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      await tester.pumpWidget(_routerApp(db: db, isAuthenticated: false));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpWidget(_routerApp(isAuthenticated: false));
+      await tester.pumpAndSettle();
 
       expect(find.byType(NavigationBar), findsNothing);
-
-      await _cleanup(tester, db);
     });
   });
 
   group('Tab navigation', () {
     testWidgets('can navigate between tabs', (tester) async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      await tester.pumpWidget(_routerApp(db: db, isAuthenticated: true));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpWidget(_routerApp(isAuthenticated: true));
+      await tester.pumpAndSettle();
 
       // Tap on History tab
       await tester.tap(find.text('History'));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('Sales History'), findsOneWidget);
 
       // Tap on Settings tab
       await tester.tap(find.text('Settings'));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('Google Drive Backup'), findsOneWidget);
 
       // Tap back to Products tab
       await tester.tap(find.text('Products').last);
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.byType(FloatingActionButton), findsOneWidget);
-
-      await _cleanup(tester, db);
     });
   });
 }

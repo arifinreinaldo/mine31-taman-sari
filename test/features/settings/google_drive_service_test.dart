@@ -1,8 +1,8 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taman_sari_pos/core/constants.dart';
-import 'package:taman_sari_pos/database/app_database.dart';
-import 'package:taman_sari_pos/features/settings/services/google_drive_service.dart';
+import 'package:per_taman_sari/core/constants.dart';
+import 'package:per_taman_sari/database/app_database.dart';
+import 'package:per_taman_sari/features/settings/services/google_drive_service.dart';
 
 void main() {
   late AppDatabase db;

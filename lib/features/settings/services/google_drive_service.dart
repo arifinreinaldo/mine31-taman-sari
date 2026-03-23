@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:google_sign_in/google_sign_in.dart';
+
+import '../../../core/constants.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 
@@ -41,7 +43,7 @@ class GoogleDriveService {
       if (!await dbFile.exists()) return false;
 
       // Search for existing backup file
-      const fileName = 'taman_sari_backup.db';
+      const fileName = AppFiles.backupName;
       final existing = await driveApi.files.list(
         q: "name = '$fileName' and trashed = false",
         spaces: 'drive',
@@ -96,7 +98,7 @@ class GoogleDriveService {
       final driveApi = drive.DriveApi(client);
 
       // Search for the backup file
-      const fileName = 'taman_sari_backup.db';
+      const fileName = AppFiles.backupName;
       final existing = await driveApi.files.list(
         q: "name = '$fileName' and trashed = false",
         spaces: 'drive',

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:taman_sari_pos/features/auth/repositories/auth_repository.dart';
+import 'package:per_taman_sari/features/auth/repositories/auth_repository.dart';
 
 /// Fake [LocalAuthentication] for testing.
 ///

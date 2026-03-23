@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taman_sari_pos/core/formatters.dart';
+import 'package:per_taman_sari/core/formatters.dart';
 
 void main() {
   group('formatIdr', () {

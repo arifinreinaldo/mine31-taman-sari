@@ -35,6 +35,11 @@ class CartNotifier extends Notifier<List<CartItem>> {
     state = [];
   }
 
+  /// Replace cart contents with pre-loaded items (for edit flow).
+  void loadItems(List<CartItem> items) {
+    state = [...items];
+  }
+
   int get totalPrice => state.fold<int>(0, (sum, i) => sum + i.subtotal);
 
   bool get hasNegativeStockWarning =>

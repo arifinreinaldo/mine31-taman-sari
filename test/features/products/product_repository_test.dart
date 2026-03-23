@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taman_sari_pos/database/app_database.dart';
-import 'package:taman_sari_pos/features/products/repositories/product_repository.dart';
+import 'package:per_taman_sari/database/app_database.dart';
+import 'package:per_taman_sari/features/products/repositories/product_repository.dart';
 
 void main() {
   late AppDatabase db;

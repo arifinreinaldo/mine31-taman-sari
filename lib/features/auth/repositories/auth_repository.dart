@@ -1,34 +1,30 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
-
-import '../../../core/constants.dart';
-import '../../../database/app_database.dart';
+import 'package:local_auth/local_auth.dart';
 
 class AuthRepository {
-  final AppDatabase _db;
+  final LocalAuthentication _localAuth;
 
-  AuthRepository(this._db);
+  AuthRepository([LocalAuthentication? localAuth])
+      : _localAuth = localAuth ?? LocalAuthentication();
 
-  String _hashPin(String pin) {
-    final bytes = utf8.encode(pin);
-    return sha256.convert(bytes).toString();
-  }
+  /// Whether the device supports any form of authentication
+  /// (biometric or device credentials like PIN/pattern/password).
+  Future<bool> isDeviceSupported() => _localAuth.isDeviceSupported();
 
-  /// Returns true if a PIN has been set.
-  Future<bool> hasPinSet() async {
-    final value = await _db.getMetadata(MetaKeys.pinHash);
-    return value != null && value.isNotEmpty;
-  }
+  /// Whether biometrics are specifically available (enrolled fingerprint/face).
+  Future<bool> canCheckBiometrics() => _localAuth.canCheckBiometrics;
 
-  /// Verify a PIN against the stored hash.
-  Future<bool> verifyPin(String pin) async {
-    final stored = await _db.getMetadata(MetaKeys.pinHash);
-    if (stored == null) return false;
-    return stored == _hashPin(pin);
-  }
+  /// Prompt the user to authenticate via biometrics or device credentials.
+  /// Returns true if authentication succeeded.
+  Future<bool> authenticate() async {
+    final supported = await _localAuth.isDeviceSupported();
+    if (!supported) return true; // No lock screen set — allow access
 
-  /// Set (or change) the PIN.
-  Future<void> setPin(String pin) async {
-    await _db.setMetadata(MetaKeys.pinHash, _hashPin(pin));
+    return _localAuth.authenticate(
+      localizedReason: 'Unlock Taman Sari POS',
+      options: const AuthenticationOptions(
+        biometricOnly: false, // Allow device PIN/pattern/password fallback
+        stickyAuth: true,
+      ),
+    );
   }
 }

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/pin_screen.dart';
-import '../features/auth/screens/set_pin_screen.dart';
 import '../features/products/screens/product_form_screen.dart';
 import '../features/products/screens/product_list_screen.dart';
 import '../features/products/screens/stock_adjust_screen.dart';
@@ -23,8 +22,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     redirect: (context, state) {
-      final onAuthPage = state.matchedLocation == '/pin' ||
-          state.matchedLocation == '/set-pin';
+      final onAuthPage = state.matchedLocation == '/pin';
 
       if (!isAuthenticated && !onAuthPage) {
         return '/pin';
@@ -37,11 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/pin',
-        builder: (context, state) => const PinScreen(),
-      ),
-      GoRoute(
-        path: '/set-pin',
-        builder: (context, state) => const SetPinScreen(),
+        builder: (context, state) => const AuthScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -104,13 +98,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'pin',
-                    builder: (context, state) =>
-                        const SetPinScreen(isChange: true),
-                  ),
-                ],
               ),
             ],
           ),

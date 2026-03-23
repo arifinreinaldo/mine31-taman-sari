@@ -1,60 +1,74 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taman_sari_pos/database/app_database.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:taman_sari_pos/features/auth/repositories/auth_repository.dart';
 
+/// Fake [LocalAuthentication] for testing.
+///
+/// Uses [noSuchMethod] to handle platform-interface types that aren't
+/// directly exported by local_auth.
+class FakeLocalAuth extends Fake implements LocalAuthentication {
+  bool deviceSupported;
+  bool authenticateResult;
+
+  FakeLocalAuth({
+    this.deviceSupported = true,
+    this.authenticateResult = true,
+  });
+
+  @override
+  Future<bool> isDeviceSupported() async => deviceSupported;
+
+  @override
+  Future<bool> get canCheckBiometrics async => deviceSupported;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    if (invocation.memberName == #authenticate) {
+      return Future<bool>.value(authenticateResult);
+    }
+    return super.noSuchMethod(invocation);
+  }
+}
+
 void main() {
-  late AppDatabase db;
-  late AuthRepository repo;
-
-  setUp(() {
-    db = AppDatabase.forTesting(NativeDatabase.memory());
-    repo = AuthRepository(db);
-  });
-
-  tearDown(() async {
-    await db.close();
-  });
-
   group('AuthRepository', () {
-    test('hasPinSet returns false initially', () async {
-      expect(await repo.hasPinSet(), isFalse);
+    test('authenticate returns true when device is not supported', () async {
+      final fakeAuth = FakeLocalAuth(deviceSupported: false);
+      final repo = AuthRepository(fakeAuth);
+
+      expect(await repo.authenticate(), isTrue);
     });
 
-    test('setPin then hasPinSet returns true', () async {
-      await repo.setPin('1234');
-      expect(await repo.hasPinSet(), isTrue);
+    test('authenticate returns true on successful auth', () async {
+      final fakeAuth = FakeLocalAuth(authenticateResult: true);
+      final repo = AuthRepository(fakeAuth);
+
+      expect(await repo.authenticate(), isTrue);
     });
 
-    test('verifyPin returns false when no pin set', () async {
-      expect(await repo.verifyPin('1234'), isFalse);
+    test('authenticate returns false on failed auth', () async {
+      final fakeAuth = FakeLocalAuth(authenticateResult: false);
+      final repo = AuthRepository(fakeAuth);
+
+      expect(await repo.authenticate(), isFalse);
     });
 
-    test('verifyPin returns true for correct pin', () async {
-      await repo.setPin('1234');
-      expect(await repo.verifyPin('1234'), isTrue);
+    test('isDeviceSupported delegates to LocalAuthentication', () async {
+      final fakeAuth = FakeLocalAuth(deviceSupported: true);
+      final repo = AuthRepository(fakeAuth);
+      expect(await repo.isDeviceSupported(), isTrue);
+
+      fakeAuth.deviceSupported = false;
+      expect(await repo.isDeviceSupported(), isFalse);
     });
 
-    test('verifyPin returns false for wrong pin', () async {
-      await repo.setPin('1234');
-      expect(await repo.verifyPin('0000'), isFalse);
-    });
+    test('canCheckBiometrics delegates to LocalAuthentication', () async {
+      final fakeAuth = FakeLocalAuth(deviceSupported: true);
+      final repo = AuthRepository(fakeAuth);
+      expect(await repo.canCheckBiometrics(), isTrue);
 
-    test('setPin overwrites previous pin', () async {
-      await repo.setPin('1234');
-      await repo.setPin('5678');
-      expect(await repo.verifyPin('1234'), isFalse);
-      expect(await repo.verifyPin('5678'), isTrue);
-    });
-
-    test('pin hash is deterministic', () async {
-      await repo.setPin('abcd');
-      expect(await repo.verifyPin('abcd'), isTrue);
-    });
-
-    test('different pins produce different hashes', () async {
-      await repo.setPin('1234');
-      expect(await repo.verifyPin('1235'), isFalse);
+      fakeAuth.deviceSupported = false;
+      expect(await repo.canCheckBiometrics(), isFalse);
     });
   });
 }

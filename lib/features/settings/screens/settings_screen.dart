@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../../core/formatters.dart';
 import '../../../core/providers/core_providers.dart';
 import '../../products/repositories/product_repository.dart';
@@ -168,16 +166,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: _importing ? null : _import,
           ),
 
-          const Divider(),
-
-          // Security
-          const _SectionHeader(title: 'Security'),
-          ListTile(
-            leading: const Icon(Icons.lock_outline),
-            title: const Text('Change PIN'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.go('/settings/pin'),
-          ),
         ],
       ),
     );

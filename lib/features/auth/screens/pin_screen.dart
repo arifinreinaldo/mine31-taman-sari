@@ -1,53 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 
-class PinScreen extends ConsumerStatefulWidget {
-  const PinScreen({super.key});
+class AuthScreen extends ConsumerStatefulWidget {
+  const AuthScreen({super.key});
 
   @override
-  ConsumerState<PinScreen> createState() => _PinScreenState();
+  ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _PinScreenState extends ConsumerState<PinScreen> {
-  final _pinController = TextEditingController();
+class _AuthScreenState extends ConsumerState<AuthScreen> {
   String? _error;
   bool _loading = false;
 
   @override
-  void dispose() {
-    _pinController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    // Prompt biometric immediately on screen load
+    WidgetsBinding.instance.addPostFrameCallback((_) => _authenticate());
   }
 
-  Future<void> _submit() async {
-    final pin = _pinController.text.trim();
-    if (pin.isEmpty) return;
-
+  Future<void> _authenticate() async {
     setState(() {
       _loading = true;
       _error = null;
     });
 
-    final repo = ref.read(authRepositoryProvider);
-    final hasPin = await repo.hasPinSet();
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      final success = await repo.authenticate();
 
-    if (!hasPin) {
-      // No PIN set yet — redirect to set PIN screen
-      if (mounted) context.go('/set-pin');
-      return;
+      if (success) {
+        ref.read(isAuthenticatedProvider.notifier).state = true;
+      } else {
+        setState(() => _error = 'Authentication failed');
+      }
+    } catch (e) {
+      setState(() => _error = 'Authentication error');
     }
 
-    final valid = await repo.verifyPin(pin);
-    if (valid) {
-      ref.read(isAuthenticatedProvider.notifier).state = true;
-    } else {
-      setState(() => _error = 'Wrong PIN');
+    if (mounted) {
+      setState(() => _loading = false);
     }
-
-    setState(() => _loading = false);
   }
 
   @override
@@ -60,7 +55,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.lock_outline,
+                Icons.fingerprint,
                 size: 64,
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -69,31 +64,33 @@ class _PinScreenState extends ConsumerState<PinScreen> {
                 'Taman Sari POS',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _pinController,
-                obscureText: true,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Enter PIN',
-                  errorText: _error,
-                ),
-                onSubmitted: (_) => _submit(),
+              const SizedBox(height: 8),
+              Text(
+                'Authenticate to continue',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 32),
+              if (_error != null) ...[
+                Text(
+                  _error!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
-                  onPressed: _loading ? null : _submit,
-                  child: _loading
+                child: FilledButton.icon(
+                  onPressed: _loading ? null : _authenticate,
+                  icon: _loading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Unlock'),
+                      : const Icon(Icons.fingerprint),
+                  label: const Text('Unlock'),
                 ),
               ),
             ],

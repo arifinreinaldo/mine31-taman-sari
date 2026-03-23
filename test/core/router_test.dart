@@ -46,26 +46,18 @@ Widget _routerApp({
   );
 }
 
-/// Dispose widget tree and flush Drift's cleanup timers.
-Future<void> _disposeTree(WidgetTester tester) async {
+/// Clean up: close DB outside fake-async zone, then dispose widget tree.
+Future<void> _cleanup(WidgetTester tester, AppDatabase db) async {
+  await tester.runAsync(() => db.close());
   await tester.pumpWidget(const SizedBox());
   await tester.pump();
 }
 
 void main() {
-  late AppDatabase db;
-
-  setUp(() {
-    db = AppDatabase.forTesting(NativeDatabase.memory());
-  });
-
-  tearDown(() async {
-    await db.close();
-  });
-
   group('Router auth guard', () {
     testWidgets('redirects to PIN screen when unauthenticated',
         (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
       await tester.pumpWidget(_routerApp(db: db, isAuthenticated: false));
       await tester.pump();
       await tester.pump();
@@ -74,10 +66,11 @@ void main() {
       expect(find.text('Taman Sari POS'), findsOneWidget);
       expect(find.text('Authenticate to continue'), findsOneWidget);
 
-      await _disposeTree(tester);
+      await _cleanup(tester, db);
     });
 
     testWidgets('shows main screen when authenticated', (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
       await tester.pumpWidget(_routerApp(db: db, isAuthenticated: true));
       await tester.pump();
       await tester.pump();
@@ -85,11 +78,12 @@ void main() {
       // Should see the bottom nav with Products tab
       expect(find.text('Products'), findsWidgets);
 
-      await _disposeTree(tester);
+      await _cleanup(tester, db);
     });
 
     testWidgets('shows bottom navigation bar when authenticated',
         (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
       await tester.pumpWidget(_routerApp(db: db, isAuthenticated: true));
       await tester.pump();
       await tester.pump();
@@ -99,22 +93,24 @@ void main() {
       expect(find.text('History'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
 
-      await _disposeTree(tester);
+      await _cleanup(tester, db);
     });
 
     testWidgets('does not show bottom nav on PIN screen', (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
       await tester.pumpWidget(_routerApp(db: db, isAuthenticated: false));
       await tester.pump();
       await tester.pump();
 
       expect(find.byType(NavigationBar), findsNothing);
 
-      await _disposeTree(tester);
+      await _cleanup(tester, db);
     });
   });
 
   group('Tab navigation', () {
     testWidgets('can navigate between tabs', (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
       await tester.pumpWidget(_routerApp(db: db, isAuthenticated: true));
       await tester.pump();
       await tester.pump();
@@ -140,7 +136,7 @@ void main() {
 
       expect(find.byType(FloatingActionButton), findsOneWidget);
 
-      await _disposeTree(tester);
+      await _cleanup(tester, db);
     });
   });
 }

@@ -44,3 +44,8 @@ app.*.map.json
 
 # SQLite DLL for testing (downloaded, not committed)
 sqlite3.dll
+
+# Signing keys
+*.jks
+*.keystore
+android/key.properties

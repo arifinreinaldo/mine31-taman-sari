@@ -48,8 +48,23 @@ class _StockAdjustScreenState extends ConsumerState<StockAdjustScreen> {
     if (newQty == null) return;
 
     setState(() => _loading = true);
-    await ref.read(productRepositoryProvider).setStock(widget.productId, newQty);
-    if (mounted) context.pop();
+    try {
+      await ref
+          .read(productRepositoryProvider)
+          .setStock(widget.productId, newQty);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Stok berhasil diubah')),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan stok: $e')),
+        );
+      }
+    }
     setState(() => _loading = false);
   }
 

@@ -74,7 +74,7 @@ void main() {
       await tester.pumpWidget(_testApp(const ProductListScreen(), db));
       await tester.pumpAndSettle();
 
-      expect(find.text('Products'), findsOneWidget);
+      expect(find.text('Produk'), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
     });
 
@@ -82,7 +82,7 @@ void main() {
       await tester.pumpWidget(_testApp(const ProductListScreen(), db));
       await tester.pumpAndSettle();
 
-      expect(find.text('No products yet'), findsOneWidget);
+      expect(find.text('Belum ada produk'), findsOneWidget);
     });
 
     testWidgets('shows search field', (tester) async {
@@ -107,7 +107,7 @@ void main() {
       await tester.pumpWidget(_testApp(const NewSaleScreen(), db));
       await tester.pumpAndSettle();
 
-      expect(find.text('New Sale'), findsOneWidget);
+      expect(find.text('Penjualan Baru'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
     });
 
@@ -116,7 +116,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Search and add products to start a sale'),
+        find.text('Cari dan tambahkan produk untuk mulai jual'),
         findsOneWidget,
       );
     });
@@ -127,14 +127,14 @@ void main() {
       await tester.pumpWidget(_testApp(const SaleHistoryScreen(), db));
       await tester.pumpAndSettle();
 
-      expect(find.text('Sales History'), findsOneWidget);
+      expect(find.text('Riwayat Penjualan'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no transactions', (tester) async {
       await tester.pumpWidget(_testApp(const SaleHistoryScreen(), db));
       await tester.pumpAndSettle();
 
-      expect(find.text('No sales yet'), findsOneWidget);
+      expect(find.text('Belum ada penjualan'), findsOneWidget);
     });
 
     testWidgets('shows transaction when data is provided', (tester) async {
@@ -146,7 +146,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('No sales yet'), findsNothing);
+      expect(find.text('Belum ada penjualan'), findsNothing);
     });
   });
 
@@ -155,7 +155,7 @@ void main() {
       await tester.pumpWidget(_testApp(const SettingsScreen(), db));
       await tester.pumpAndSettle();
 
-      expect(find.text('Google Drive Backup'), findsOneWidget);
+      expect(find.text('Cadangan Google Drive'), findsOneWidget);
       expect(find.text('Google Sheets'), findsOneWidget);
     });
 
@@ -163,23 +163,23 @@ void main() {
       await tester.pumpWidget(_testApp(const SettingsScreen(), db));
       await tester.pumpAndSettle();
 
-      expect(find.text('Backup Now'), findsOneWidget);
-      expect(find.text('Restore from Backup'), findsOneWidget);
+      expect(find.text('Cadangkan Sekarang'), findsOneWidget);
+      expect(find.text('Pulihkan dari Cadangan'), findsOneWidget);
     });
 
     testWidgets('shows export and import tiles', (tester) async {
       await tester.pumpWidget(_testApp(const SettingsScreen(), db));
       await tester.pumpAndSettle();
 
-      expect(find.text('Export to Sheet'), findsOneWidget);
-      expect(find.text('Import from Sheet'), findsOneWidget);
+      expect(find.text('Kirim ke Sheet'), findsOneWidget);
+      expect(find.text('Ambil dari Sheet'), findsOneWidget);
     });
 
     testWidgets('shows not signed in when no account', (tester) async {
       await tester.pumpWidget(_testApp(const SettingsScreen(), db));
       await tester.pumpAndSettle();
 
-      expect(find.text('Not signed in'), findsOneWidget);
+      expect(find.text('Belum masuk akun'), findsOneWidget);
     });
   });
 }

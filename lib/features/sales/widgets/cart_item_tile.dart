@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/formatters.dart';
 import '../models/cart_item.dart';
@@ -18,6 +19,12 @@ class CartItemTile extends StatelessWidget {
     required this.onRemove,
   });
 
+  String _formatPrice(int value) {
+    return NumberFormat('#,###', 'id_ID')
+        .format(value)
+        .replaceAll(',', '.');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -35,9 +42,8 @@ class CartItemTile extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, size: 18),
+                  icon: const Icon(Icons.close, size: 20),
                   onPressed: onRemove,
-                  visualDensity: VisualDensity.compact,
                 ),
               ],
             ),
@@ -54,39 +60,61 @@ class CartItemTile extends StatelessWidget {
               ),
             Row(
               children: [
-                // Quantity
-                SizedBox(
-                  width: 72,
-                  child: TextFormField(
-                    initialValue: item.quantity.toString(),
-                    decoration: const InputDecoration(
-                      labelText: 'Jml',
-                      isDense: true,
+                // Quantity with +/- buttons
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: item.quantity > 1
+                          ? () => onUpdate(
+                              item.copyWith(quantity: item.quantity - 1))
+                          : null,
+                      iconSize: 22,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      padding: EdgeInsets.zero,
                     ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onChanged: (v) {
-                      final qty = int.tryParse(v);
-                      if (qty != null && qty > 0) {
-                        onUpdate(item.copyWith(quantity: qty));
-                      }
-                    },
-                  ),
+                    SizedBox(
+                      width: 36,
+                      child: Text(
+                        '${item.quantity}',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () => onUpdate(
+                          item.copyWith(quantity: item.quantity + 1)),
+                      iconSize: 22,
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 // Unit price
                 Expanded(
                   child: TextFormField(
-                    initialValue: item.unitPrice.toString(),
+                    initialValue: _formatPrice(item.unitPrice),
                     decoration: const InputDecoration(
                       labelText: 'Harga',
                       prefixText: 'Rp ',
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                      ThousandSeparatorFormatter(),
+                    ],
                     onChanged: (v) {
-                      final price = int.tryParse(v);
+                      final price = parseIdr(v);
                       if (price != null && price >= 0) {
                         onUpdate(item.copyWith(unitPrice: price));
                       }

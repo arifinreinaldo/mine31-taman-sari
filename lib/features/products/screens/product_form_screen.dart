@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
+import '../../../core/formatters.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../providers/product_providers.dart';
 import '../../../database/app_database.dart';
@@ -43,9 +45,14 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       setState(() {
         _existing = product;
         _nameController.text = product.name;
-        _priceController.text = product.suggestedPrice.toString();
-        _costController.text =
-            product.costPrice > 0 ? product.costPrice.toString() : '';
+        _priceController.text = NumberFormat('#,###', 'id_ID')
+            .format(product.suggestedPrice)
+            .replaceAll(',', '.');
+        _costController.text = product.costPrice > 0
+            ? NumberFormat('#,###', 'id_ID')
+                .format(product.costPrice)
+                .replaceAll(',', '.')
+            : '';
         _stockController.text = product.stockQty.toString();
       });
     }
@@ -65,33 +72,45 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
     setState(() => _loading = true);
 
-    final repo = ref.read(productRepositoryProvider);
-    final name = _nameController.text.trim();
-    final price = int.parse(_priceController.text.trim());
-    final cost = _costController.text.trim().isEmpty
-        ? 0
-        : int.parse(_costController.text.trim());
+    try {
+      final repo = ref.read(productRepositoryProvider);
+      final name = _nameController.text.trim();
+      final price = parseIdr(_priceController.text) ?? 0;
+      final cost = parseIdr(_costController.text) ?? 0;
 
-    if (widget.isEditing) {
-      await repo.update(
-        id: widget.productId!,
-        name: name,
-        suggestedPrice: price,
-        costPrice: cost,
-      );
-    } else {
-      final stock = _stockController.text.trim().isEmpty
-          ? 0
-          : int.parse(_stockController.text.trim());
-      await repo.insert(
-        name: name,
-        suggestedPrice: price,
-        costPrice: cost,
-        stockQty: stock,
-      );
+      if (widget.isEditing) {
+        await repo.update(
+          id: widget.productId!,
+          name: name,
+          suggestedPrice: price,
+          costPrice: cost,
+        );
+      } else {
+        final stock = _stockController.text.trim().isEmpty
+            ? 0
+            : int.parse(_stockController.text.trim());
+        await repo.insert(
+          name: name,
+          suggestedPrice: price,
+          costPrice: cost,
+          stockQty: stock,
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Berhasil disimpan')),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan: $e')),
+        );
+      }
     }
 
-    if (mounted) context.pop();
     setState(() => _loading = false);
   }
 
@@ -155,10 +174,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 prefixText: 'Rp ',
               ),
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                ThousandSeparatorFormatter(),
+              ],
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Harga harus diisi';
-                if (int.tryParse(v.trim()) == null) return 'Angka tidak valid';
+                if (parseIdr(v) == null) return 'Angka tidak valid';
                 return null;
               },
             ),
@@ -170,7 +192,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 prefixText: 'Rp ',
               ),
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                ThousandSeparatorFormatter(),
+              ],
             ),
             if (!widget.isEditing) ...[
               const SizedBox(height: 16),

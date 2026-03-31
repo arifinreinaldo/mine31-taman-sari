@@ -51,14 +51,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Taman Sari POS'), findsOneWidget);
-      expect(find.text('Authenticate to continue'), findsOneWidget);
+      expect(find.text('Sentuh untuk masuk'), findsOneWidget);
     });
 
     testWidgets('shows main screen when authenticated', (tester) async {
       await tester.pumpWidget(_routerApp(isAuthenticated: true));
       await tester.pumpAndSettle();
 
-      expect(find.text('Products'), findsWidgets);
+      expect(find.text('Produk'), findsWidgets);
     });
 
     testWidgets('shows bottom navigation bar when authenticated',
@@ -67,9 +67,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(NavigationBar), findsOneWidget);
-      expect(find.text('New Sale'), findsOneWidget);
-      expect(find.text('History'), findsOneWidget);
-      expect(find.text('Settings'), findsOneWidget);
+      expect(find.text('Penjualan'), findsOneWidget);
+      expect(find.text('Riwayat'), findsOneWidget);
+      expect(find.text('Pengaturan'), findsOneWidget);
     });
 
     testWidgets('does not show bottom nav on PIN screen', (tester) async {
@@ -86,19 +86,19 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap on History tab
-      await tester.tap(find.text('History'));
+      await tester.tap(find.text('Riwayat'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Sales History'), findsOneWidget);
+      expect(find.text('Riwayat Penjualan'), findsOneWidget);
 
       // Tap on Settings tab
-      await tester.tap(find.text('Settings'));
+      await tester.tap(find.text('Pengaturan'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Google Drive Backup'), findsOneWidget);
+      expect(find.text('Cadangan Google Drive'), findsOneWidget);
 
       // Tap back to Products tab
-      await tester.tap(find.text('Products').last);
+      await tester.tap(find.text('Produk').last);
       await tester.pumpAndSettle();
 
       expect(find.byType(FloatingActionButton), findsOneWidget);

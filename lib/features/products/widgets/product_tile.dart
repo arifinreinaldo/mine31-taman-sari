@@ -38,8 +38,19 @@ class ProductTile extends StatelessWidget {
             onTap: onStockTap,
             borderRadius: BorderRadius.circular(12),
             child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: StockBadge(qty: product.stockQty),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  StockBadge(qty: product.stockQty),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.edit,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 4),

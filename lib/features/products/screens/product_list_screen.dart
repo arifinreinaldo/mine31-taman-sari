@@ -31,13 +31,14 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
       appBar: AppBar(
         title: const Text('Produk'),
         actions: [
-          IconButton(
+          TextButton.icon(
             icon: Icon(
               showInactive
                   ? Icons.visibility
                   : Icons.visibility_off_outlined,
+              size: 20,
             ),
-            tooltip: showInactive ? 'Sembunyikan nonaktif' : 'Tampilkan nonaktif',
+            label: Text(showInactive ? 'Semua' : 'Nonaktif'),
             onPressed: () {
               ref.read(showInactiveProvider.notifier).state = !showInactive;
             },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/formatters.dart';
 import '../../../database/app_database.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/search_field.dart';
@@ -64,13 +65,56 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
 
     setState(() => _saving = true);
 
-    await ref.read(transactionRepositoryProvider).saveSale(items: cart);
-    ref.read(cartProvider.notifier).clear();
+    try {
+      final totalItems = cart.fold<int>(0, (sum, i) => sum + i.quantity);
+      final totalPrice = cart.fold<int>(0, (sum, i) => sum + i.subtotal);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Penjualan selesai')),
-      );
+      await ref.read(transactionRepositoryProvider).saveSale(items: cart);
+      ref.read(cartProvider.notifier).clear();
+
+      if (mounted) {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            icon: Icon(
+              Icons.check_circle,
+              color: Theme.of(ctx).colorScheme.primary,
+              size: 48,
+            ),
+            title: const Text('Penjualan Berhasil'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  formatIdr(totalPrice),
+                  style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text('$totalItems barang'),
+                const SizedBox(height: 4),
+                Text(
+                  formatDateTime(DateTime.now()),
+                  style: Theme.of(ctx).textTheme.bodySmall,
+                ),
+              ],
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan penjualan: $e')),
+        );
+      }
     }
 
     setState(() => _saving = false);
@@ -86,9 +130,9 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
         title: const Text('Penjualan Baru'),
         actions: [
           if (cart.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_sweep_outlined),
-              tooltip: 'Kosongkan keranjang',
+            TextButton.icon(
+              icon: const Icon(Icons.delete_sweep_outlined, size: 20),
+              label: const Text('Kosongkan'),
               onPressed: () async {
                 final confirmed = await showConfirmDialog(
                   context,

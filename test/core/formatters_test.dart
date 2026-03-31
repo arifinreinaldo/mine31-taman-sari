@@ -50,24 +50,24 @@ void main() {
   });
 
   group('formatTimeAgo', () {
-    test('returns "just now" for recent time', () {
+    test('returns "baru saja" for recent time', () {
       final dt = DateTime.now().subtract(const Duration(seconds: 30));
-      expect(formatTimeAgo(dt), 'just now');
+      expect(formatTimeAgo(dt), 'baru saja');
     });
 
     test('returns minutes ago', () {
       final dt = DateTime.now().subtract(const Duration(minutes: 5));
-      expect(formatTimeAgo(dt), '5m ago');
+      expect(formatTimeAgo(dt), '5 menit lalu');
     });
 
     test('returns hours ago', () {
       final dt = DateTime.now().subtract(const Duration(hours: 3));
-      expect(formatTimeAgo(dt), '3h ago');
+      expect(formatTimeAgo(dt), '3 jam lalu');
     });
 
     test('returns days ago', () {
       final dt = DateTime.now().subtract(const Duration(days: 2));
-      expect(formatTimeAgo(dt), '2d ago');
+      expect(formatTimeAgo(dt), '2 hari lalu');
     });
 
     test('returns formatted date for old times', () {

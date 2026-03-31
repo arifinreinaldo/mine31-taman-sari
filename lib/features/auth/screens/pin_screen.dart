@@ -34,10 +34,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       if (success) {
         ref.read(isAuthenticatedProvider.notifier).state = true;
       } else {
-        setState(() => _error = 'Authentication failed');
+        setState(() => _error = 'Gagal masuk, coba lagi');
       }
     } catch (e) {
-      setState(() => _error = 'Authentication error');
+      setState(() => _error = 'Terjadi kesalahan, coba lagi');
     }
 
     if (mounted) {
@@ -66,7 +66,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Authenticate to continue',
+                'Sentuh untuk masuk',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 32),
@@ -90,7 +90,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.fingerprint),
-                  label: const Text('Unlock'),
+                  label: const Text('Masuk'),
                 ),
               ),
             ],

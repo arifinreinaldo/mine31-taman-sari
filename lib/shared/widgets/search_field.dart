@@ -7,7 +7,7 @@ class SearchField extends StatelessWidget {
 
   const SearchField({
     super.key,
-    this.hintText = 'Search...',
+    this.hintText = 'Cari...',
     required this.onChanged,
     this.controller,
   });

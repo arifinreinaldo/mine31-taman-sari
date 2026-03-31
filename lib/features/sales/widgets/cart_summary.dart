@@ -47,7 +47,7 @@ class CartSummary extends StatelessWidget {
                         ),
                   ),
                   Text(
-                    '$itemCount item${itemCount == 1 ? '' : 's'}',
+                    '$itemCount barang',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -62,7 +62,7 @@ class CartSummary extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.check),
-              label: const Text('Complete Sale'),
+              label: const Text('Selesaikan'),
             ),
           ],
         ),

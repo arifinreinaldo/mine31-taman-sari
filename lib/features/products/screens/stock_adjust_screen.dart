@@ -56,7 +56,7 @@ class _StockAdjustScreenState extends ConsumerState<StockAdjustScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Adjust Stock')),
+      appBar: AppBar(title: const Text('Ubah Stok')),
       body: _product == null
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -69,12 +69,12 @@ class _StockAdjustScreenState extends ConsumerState<StockAdjustScreen> {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
-                  Text('Current stock: ${_product!.stockQty}'),
+                  Text('Stok saat ini: ${_product!.stockQty}'),
                   const SizedBox(height: 24),
                   TextField(
                     controller: _stockController,
                     decoration: const InputDecoration(
-                      labelText: 'New Stock Quantity',
+                      labelText: 'Jumlah Stok Baru',
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -90,7 +90,7 @@ class _StockAdjustScreenState extends ConsumerState<StockAdjustScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Save'),
+                        : const Text('Simpan'),
                   ),
                 ],
               ),

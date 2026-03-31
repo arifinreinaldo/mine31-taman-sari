@@ -98,10 +98,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   Future<void> _delete() async {
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Deactivate Product',
+      title: 'Nonaktifkan Produk',
       message:
-          'This will hide "${_existing!.name}" from sale search. It can be restored later.',
-      confirmText: 'Deactivate',
+          '"${_existing!.name}" tidak akan muncul di pencarian penjualan. Bisa diaktifkan kembali nanti.',
+      confirmText: 'Nonaktifkan',
       isDestructive: true,
     );
     if (!confirmed) return;
@@ -119,18 +119,18 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Product' : 'New Product'),
+        title: Text(widget.isEditing ? 'Ubah Produk' : 'Produk Baru'),
         actions: [
           if (widget.isEditing && _existing != null)
             _existing!.active == 1
                 ? IconButton(
                     icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Deactivate',
+                    tooltip: 'Nonaktifkan',
                     onPressed: _delete,
                   )
                 : IconButton(
                     icon: const Icon(Icons.restore),
-                    tooltip: 'Restore',
+                    tooltip: 'Aktifkan Kembali',
                     onPressed: _restore,
                   ),
         ],
@@ -142,23 +142,23 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           children: [
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Product Name'),
+              decoration: const InputDecoration(labelText: 'Nama Produk'),
               textCapitalization: TextCapitalization.words,
               validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Name is required' : null,
+                  v == null || v.trim().isEmpty ? 'Nama harus diisi' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _priceController,
               decoration: const InputDecoration(
-                labelText: 'Suggested Price (IDR)',
+                labelText: 'Harga Jual',
                 prefixText: 'Rp ',
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Price is required';
-                if (int.tryParse(v.trim()) == null) return 'Invalid number';
+                if (v == null || v.trim().isEmpty) return 'Harga harus diisi';
+                if (int.tryParse(v.trim()) == null) return 'Angka tidak valid';
                 return null;
               },
             ),
@@ -166,7 +166,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             TextFormField(
               controller: _costController,
               decoration: const InputDecoration(
-                labelText: 'Cost Price (IDR, optional)',
+                labelText: 'Harga Modal (opsional)',
                 prefixText: 'Rp ',
               ),
               keyboardType: TextInputType.number,
@@ -177,7 +177,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               TextFormField(
                 controller: _stockController,
                 decoration: const InputDecoration(
-                  labelText: 'Initial Stock',
+                  labelText: 'Stok Awal',
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -192,7 +192,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(widget.isEditing ? 'Update' : 'Add Product'),
+                  : Text(widget.isEditing ? 'Simpan' : 'Tambah Produk'),
             ),
           ],
         ),

@@ -45,7 +45,7 @@ class CartItemTile extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  'Stock: ${item.currentStock} — will go negative',
+                  'Stok: ${item.currentStock} — akan minus',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.error,
                     fontSize: 12,
@@ -60,7 +60,7 @@ class CartItemTile extends StatelessWidget {
                   child: TextFormField(
                     initialValue: item.quantity.toString(),
                     decoration: const InputDecoration(
-                      labelText: 'Qty',
+                      labelText: 'Jml',
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
@@ -79,7 +79,7 @@ class CartItemTile extends StatelessWidget {
                   child: TextFormField(
                     initialValue: item.unitPrice.toString(),
                     decoration: const InputDecoration(
-                      labelText: 'Price',
+                      labelText: 'Harga',
                       prefixText: 'Rp ',
                       isDense: true,
                     ),

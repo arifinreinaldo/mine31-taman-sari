@@ -30,7 +30,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (result.contains(ConnectivityResult.none)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No internet connection')),
+          const SnackBar(content: Text('Tidak ada koneksi internet')),
         );
       }
       return false;
@@ -52,7 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            success ? 'Backup completed' : 'Backup failed',
+            success ? 'Cadangan berhasil' : 'Cadangan gagal',
           ),
         ),
       );
@@ -63,12 +63,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _restore() async {
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Restore Backup',
+      title: 'Pulihkan Data',
       message:
-          'This will replace ALL local data with the backup from Google Drive. '
-          'This action cannot be undone.\n\n'
-          'The app will close after restoring. Please reopen it manually.',
-      confirmText: 'Restore',
+          'SEMUA data di HP akan diganti dengan cadangan dari Google Drive. '
+          'Tidak bisa dibatalkan.\n\n'
+          'Aplikasi akan ditutup setelah selesai. Buka kembali secara manual.',
+      confirmText: 'Pulihkan',
       isDestructive: true,
     );
     if (!confirmed) return;
@@ -89,28 +89,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           context: context,
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
-            title: const Text('Restore Complete'),
+            title: const Text('Pemulihan Selesai'),
             content: const Text(
-              'The database has been restored. '
-              'The app will now close. Please reopen it.',
+              'Data berhasil dipulihkan. '
+              'Aplikasi akan ditutup. Silakan buka kembali.',
             ),
             actions: [
               FilledButton(
                 onPressed: () => SystemNavigator.pop(),
-                child: const Text('Close App'),
+                child: const Text('Tutup Aplikasi'),
               ),
             ],
           ),
         );
       case 'no_backup':
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No backup found on Google Drive')),
+          const SnackBar(content: Text('Tidak ada cadangan di Google Drive')),
         );
       case 'cancelled':
         break;
       default:
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Restore failed')),
+          const SnackBar(content: Text('Pemulihan gagal')),
         );
     }
     setState(() => _restoring = false);
@@ -144,8 +144,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SnackBar(
           content: Text(
             success
-                ? 'Export completed'
-                : 'Export failed — configure Apps Script URL',
+                ? 'Pengiriman berhasil'
+                : 'Pengiriman gagal — atur URL Apps Script',
           ),
         ),
       );
@@ -172,8 +172,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SnackBar(
           content: Text(
             count > 0
-                ? 'Imported $count products'
-                : 'Import failed — configure Apps Script URL',
+                ? '$count produk berhasil diambil'
+                : 'Gagal mengambil data — atur URL Apps Script',
           ),
         ),
       );
@@ -188,11 +188,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final googleAccount = ref.watch(googleAccountProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Pengaturan')),
       body: ListView(
         children: [
           // Google Drive Backup
-          const _SectionHeader(title: 'Google Drive Backup'),
+          const _SectionHeader(title: 'Cadangan Google Drive'),
 
           // Signed-in account display
           googleAccount.when(
@@ -205,34 +205,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         : null,
                     trailing: TextButton(
                       onPressed: _signOut,
-                      child: const Text('Sign Out'),
+                      child: const Text('Keluar'),
                     ),
                   )
                 : const ListTile(
                     leading: Icon(Icons.account_circle_outlined),
-                    title: Text('Not signed in'),
+                    title: Text('Belum masuk akun'),
                     subtitle:
-                        Text('Sign in automatically on backup or restore'),
+                        Text('Otomatis masuk saat cadangkan atau pulihkan'),
                   ),
             loading: () => const ListTile(
               leading: Icon(Icons.account_circle_outlined),
-              title: Text('Checking account...'),
+              title: Text('Memeriksa akun...'),
             ),
             error: (_, __) => const ListTile(
               leading: Icon(Icons.account_circle_outlined),
-              title: Text('Not signed in'),
+              title: Text('Belum masuk akun'),
             ),
           ),
 
           ListTile(
             leading: const Icon(Icons.cloud_upload_outlined),
-            title: const Text('Backup Now'),
+            title: const Text('Cadangkan Sekarang'),
             subtitle: lastBackup.when(
               data: (dt) => Text(
-                dt != null ? 'Last: ${formatTimeAgo(dt)}' : 'Never backed up',
+                dt != null ? 'Terakhir: ${formatTimeAgo(dt)}' : 'Belum pernah dicadangkan',
               ),
               loading: () => const Text('...'),
-              error: (_, __) => const Text('Unknown'),
+              error: (_, __) => const Text('Tidak diketahui'),
             ),
             trailing: _backingUp
                 ? const SizedBox(
@@ -245,8 +245,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.cloud_download_outlined),
-            title: const Text('Restore from Backup'),
-            subtitle: const Text('Replace local data with Drive backup'),
+            title: const Text('Pulihkan dari Cadangan'),
+            subtitle: const Text('Ganti data lokal dengan cadangan Drive'),
             trailing: _restoring
                 ? const SizedBox(
                     height: 20,
@@ -263,15 +263,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const _SectionHeader(title: 'Google Sheets'),
           ListTile(
             leading: const Icon(Icons.upload_outlined),
-            title: const Text('Export to Sheet'),
+            title: const Text('Kirim ke Sheet'),
             subtitle: lastExport.when(
               data: (dt) => Text(
                 dt != null
-                    ? 'Last: ${formatTimeAgo(dt)}'
-                    : 'Never exported',
+                    ? 'Terakhir: ${formatTimeAgo(dt)}'
+                    : 'Belum pernah dikirim',
               ),
               loading: () => const Text('...'),
-              error: (_, __) => const Text('Unknown'),
+              error: (_, __) => const Text('Tidak diketahui'),
             ),
             trailing: _exporting
                 ? const SizedBox(
@@ -284,8 +284,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.download_outlined),
-            title: const Text('Import from Sheet'),
-            subtitle: const Text('Upsert products from Google Sheet'),
+            title: const Text('Ambil dari Sheet'),
+            subtitle: const Text('Perbarui produk dari Google Sheet'),
             trailing: _importing
                 ? const SizedBox(
                     height: 20,

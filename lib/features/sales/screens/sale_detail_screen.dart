@@ -69,21 +69,21 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
     return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cancel & Edit Sale'),
+        title: const Text('Batalkan & Ubah'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'This will cancel the original sale and open a new one with the same items. Please provide a reason.',
+              'Penjualan ini akan dibatalkan dan dibuat ulang dengan barang yang sama. Tulis alasan pembatalan.',
             ),
             const SizedBox(height: 16),
             TextField(
               controller: controller,
               autofocus: true,
               decoration: const InputDecoration(
-                labelText: 'Cancel reason',
-                hintText: 'e.g. Wrong price, item correction',
+                labelText: 'Alasan pembatalan',
+                hintText: 'Contoh: Harga salah, koreksi barang',
                 border: OutlineInputBorder(),
               ),
               textCapitalization: TextCapitalization.sentences,
@@ -94,7 +94,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Back'),
+            child: const Text('Kembali'),
           ),
           FilledButton(
             onPressed: () {
@@ -105,7 +105,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
-            child: const Text('Cancel & Edit'),
+            child: const Text('Batalkan & Ubah'),
           ),
         ],
       ),
@@ -118,12 +118,12 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sale Detail'),
+        title: const Text('Detail Penjualan'),
         actions: [
           if (!_loading && _transaction != null && !_isCancelled)
             IconButton(
               icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Edit sale',
+              tooltip: 'Ubah penjualan',
               onPressed: _handleEdit,
             ),
         ],
@@ -131,7 +131,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _transaction == null
-              ? const Center(child: Text('Transaction not found'))
+              ? const Center(child: Text('Transaksi tidak ditemukan'))
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
@@ -153,7 +153,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'CANCELLED',
+                                      'DIBATALKAN',
                                       style: theme.textTheme.labelLarge
                                           ?.copyWith(
                                         color:
@@ -228,7 +228,7 @@ class _SaleDetailScreenState extends ConsumerState<SaleDetailScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Items',
+                      'Daftar Barang',
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),

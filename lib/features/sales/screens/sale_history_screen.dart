@@ -13,10 +13,10 @@ class SaleHistoryScreen extends ConsumerWidget {
     final txnAsync = ref.watch(transactionListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sales History')),
+      appBar: AppBar(title: const Text('Riwayat Penjualan')),
       body: txnAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('Terjadi kesalahan: $e')),
         data: (transactions) {
           if (transactions.isEmpty) {
             return Center(
@@ -30,7 +30,7 @@ class SaleHistoryScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No sales yet',
+                    'Belum ada penjualan',
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                 ],

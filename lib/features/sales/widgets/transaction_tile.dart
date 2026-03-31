@@ -48,7 +48,7 @@ class TransactionTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                'CANCELLED',
+                'DIBATALKAN',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onErrorContainer,
                   fontWeight: FontWeight.bold,

@@ -29,7 +29,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Products'),
+        title: const Text('Produk'),
         actions: [
           IconButton(
             icon: Icon(
@@ -37,7 +37,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                   ? Icons.visibility
                   : Icons.visibility_off_outlined,
             ),
-            tooltip: showInactive ? 'Hide inactive' : 'Show inactive',
+            tooltip: showInactive ? 'Sembunyikan nonaktif' : 'Tampilkan nonaktif',
             onPressed: () {
               ref.read(showInactiveProvider.notifier).state = !showInactive;
             },
@@ -48,7 +48,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
         children: [
           SearchField(
             controller: _searchController,
-            hintText: 'Search products...',
+            hintText: 'Cari produk...',
             onChanged: (value) {
               ref.read(productSearchProvider.notifier).state = value;
             },
@@ -56,7 +56,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
           Expanded(
             child: productsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(child: Text('Terjadi kesalahan: $e')),
               data: (products) {
                 if (products.isEmpty) {
                   return Center(
@@ -70,14 +70,14 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No products yet',
+                          'Belum ada produk',
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 8),
                         FilledButton.icon(
                           onPressed: () => context.go('/products/new'),
                           icon: const Icon(Icons.add),
-                          label: const Text('Add Product'),
+                          label: const Text('Tambah Produk'),
                         ),
                       ],
                     ),

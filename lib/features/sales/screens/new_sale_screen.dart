@@ -53,10 +53,10 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
     if (hasNegative) {
       final proceed = await showConfirmDialog(
         context,
-        title: 'Negative Stock Warning',
+        title: 'Peringatan Stok Minus',
         message:
-            'Some items will result in negative stock. Continue anyway?',
-        confirmText: 'Continue',
+            'Beberapa barang akan membuat stok menjadi minus. Lanjutkan?',
+        confirmText: 'Lanjutkan',
         isDestructive: true,
       );
       if (!proceed) return;
@@ -69,7 +69,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sale completed')),
+        const SnackBar(content: Text('Penjualan selesai')),
       );
     }
 
@@ -83,18 +83,18 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Sale'),
+        title: const Text('Penjualan Baru'),
         actions: [
           if (cart.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep_outlined),
-              tooltip: 'Clear cart',
+              tooltip: 'Kosongkan keranjang',
               onPressed: () async {
                 final confirmed = await showConfirmDialog(
                   context,
-                  title: 'Clear Cart',
-                  message: 'Remove all items from cart?',
-                  confirmText: 'Clear',
+                  title: 'Kosongkan Keranjang',
+                  message: 'Hapus semua barang dari keranjang?',
+                  confirmText: 'Kosongkan',
                   isDestructive: true,
                 );
                 if (confirmed) {
@@ -109,7 +109,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
           // Product search
           SearchField(
             controller: _searchController,
-            hintText: 'Search product to add...',
+            hintText: 'Cari produk untuk ditambahkan...',
             onChanged: (v) => setState(() => _searchQuery = v),
           ),
 
@@ -122,7 +122,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                 if (products.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.all(8),
-                    child: Text('No products found'),
+                    child: Text('Produk tidak ditemukan'),
                   );
                 }
                 return Container(
@@ -142,7 +142,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                       return ListTile(
                         dense: true,
                         title: Text(p.name),
-                        subtitle: Text('Stock: ${p.stockQty}'),
+                        subtitle: Text('Stok: ${p.stockQty}'),
                         trailing: Text('Rp ${p.suggestedPrice}'),
                         onTap: () => _addProductToCart(p),
                       );
@@ -157,7 +157,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
             child: cart.isEmpty
                 ? Center(
                     child: Text(
-                      'Search and add products to start a sale',
+                      'Cari dan tambahkan produk untuk mulai jual',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: Theme.of(context).colorScheme.outline,
                           ),
